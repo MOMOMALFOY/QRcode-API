@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime, timedelta
 import httpx
 from qrcode.image.svg import SvgImage
+from qrcode.constants import ERROR_CORRECT_H
 
 app = FastAPI(title="QR Code API")
 
@@ -35,52 +36,64 @@ GRADIENTS = {
     "vertical": VerticalGradiantColorMask,
 }
 
-def hex_to_rgb(hex_color: str, alpha: Optional[int] = None):
-    """Convertit une couleur hexadécimale en tuple RGB ou RGBA."""
-    hex_color = hex_color.lstrip('#')
+def safe_hex_to_rgb(hex_color: str, alpha: Optional[int] = None, force_rgba: bool = False):
+    if not hex_color:
+        hex_color = "#000000"
+    hex_color = str(hex_color).lstrip('#')
     lv = len(hex_color)
     rgb = tuple(int(hex_color[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-    if alpha is not None:
-        return (*rgb, alpha)
-    return rgb
+    if alpha is not None or force_rgba:
+        if len(rgb) == 3:
+            return (*rgb, alpha if alpha is not None else 255)
+        elif len(rgb) == 4:
+            return rgb
+        else:
+            return (0, 0, 0, alpha if alpha is not None else 255)
+    # Toujours retourner un tuple de 3
+    if len(rgb) == 3:
+        return rgb
+    elif len(rgb) == 4:
+        return rgb[:3]
+    else:
+        return (0, 0, 0)
 
 @app.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
-    # Stockage temporaire en mémoire, retourne le contenu binaire
     content = await file.read()
     return {"filename": file.filename, "content": content.hex()}
 
 @app.post("/create-custom-qr")
 async def create_custom_qr(
     data: str = Form(...),
-    body_color: Optional[str] = Form("#000000"),
-    bg_color: Optional[str] = Form("#FFFFFF"),
-    size: Optional[int] = Form(600),
+    body_color: str = Form("#000000"),
+    bg_color: str = Form("#FFFFFF"),
+    size: int = Form(600),
     logo: Optional[UploadFile] = File(None),
-    file: Optional[str] = Form("png")
+    file: str = Form("png")
 ):
+    body_color = str(body_color or "#000000")
+    bg_color = str(bg_color or "#FFFFFF")
+    file = str(file or "png")
+    size = int(size or 600)
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(data)
     qr.make(fit=True)
-    front_rgb = hex_to_rgb(body_color)
-    back_rgb = hex_to_rgb(bg_color)
+    front_rgb = safe_hex_to_rgb(body_color)
+    back_rgb = safe_hex_to_rgb(bg_color)
     img = qr.make_image(
         image_factory=StyledPilImage,
         module_drawer=RoundedModuleDrawer(),
         color_mask=SolidFillColorMask(front_color=front_rgb, back_color=back_rgb)
     ).convert("RGBA")
-    # Redimensionnement
     img = img.resize((size, size))
-    # Ajout du logo si fourni
     if logo:
         logo_bytes = await logo.read()
         logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
-        # Redimensionne le logo
         logo_size = int(size * 0.2)
         logo_img = logo_img.resize((logo_size, logo_size))
         pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
@@ -93,22 +106,26 @@ async def create_custom_qr(
 @app.get("/create-custom-qr")
 async def get_custom_qr(
     data: str = Query(...),
-    body_color: Optional[str] = Query("#000000"),
-    bg_color: Optional[str] = Query("#FFFFFF"),
-    size: Optional[int] = Query(600),
-    file: Optional[str] = Query("png"),
+    body_color: str = Query("#000000"),
+    bg_color: str = Query("#FFFFFF"),
+    size: int = Query(600),
+    file: str = Query("png"),
     logo: Optional[str] = Query(None)
 ):
+    body_color = str(body_color or "#000000")
+    bg_color = str(bg_color or "#FFFFFF")
+    file = str(file or "png")
+    size = int(size or 600)
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(data)
     qr.make(fit=True)
-    front_rgb = hex_to_rgb(body_color)
-    back_rgb = hex_to_rgb(bg_color)
+    front_rgb = safe_hex_to_rgb(body_color)
+    back_rgb = safe_hex_to_rgb(bg_color)
     img = qr.make_image(
         image_factory=StyledPilImage,
         module_drawer=RoundedModuleDrawer(),
@@ -123,13 +140,15 @@ async def get_custom_qr(
 @app.post("/create-transparent-qr")
 async def create_transparent_qr(
     data: str = Form(...),
-    size: Optional[int] = Form(400),
-    file: Optional[str] = Form("png"),
+    size: int = Form(400),
+    file: str = Form("png"),
     logo: Optional[UploadFile] = File(None)
 ):
+    file = str(file or "png")
+    size = int(size or 400)
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
@@ -153,7 +172,6 @@ async def create_transparent_qr(
     datas = img.getdata()
     newData = []
     for item in datas:
-        # Si le pixel est blanc, on le rend transparent
         if item[0] > 250 and item[1] > 250 and item[2] > 250:
             newData.append((255, 255, 255, 0))
         else:
@@ -167,13 +185,15 @@ async def create_transparent_qr(
 @app.get("/create-transparent-qr")
 async def get_transparent_qr(
     data: str = Query(...),
-    size: Optional[int] = Query(400),
-    file: Optional[str] = Query("png"),
+    size: int = Query(400),
+    file: str = Query("png"),
     logo: Optional[str] = Query(None)
 ):
+    file = str(file or "png")
+    size = int(size or 400)
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
@@ -223,16 +243,16 @@ async def create_advanced_qr(
 ):
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(data)
     qr.make(fit=True)
-    module_drawer = MODULE_STYLES.get(module_style, SquareModuleDrawer())
-    color_mask_cls = GRADIENTS.get(gradient_type, SolidFillColorMask)
-    front = hex_to_rgb(start_color)
-    back = hex_to_rgb(end_color)
+    module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
+    color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
+    front = safe_hex_to_rgb(start_color)
+    back = safe_hex_to_rgb(end_color)
     if gradient_type == "solid":
         color_mask = color_mask_cls(front_color=front, back_color=back)
     elif gradient_type == "radial":
@@ -306,16 +326,16 @@ async def create_dynamic_qr(
     redirect_url = f"http://127.0.0.1:8000/redirect/{qr_id}"
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(redirect_url)
     qr.make(fit=True)
-    module_drawer = MODULE_STYLES.get(module_style, SquareModuleDrawer())
-    color_mask_cls = GRADIENTS.get(gradient_type, SolidFillColorMask)
-    front = hex_to_rgb(start_color)
-    back = hex_to_rgb(end_color)
+    module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
+    color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
+    front = safe_hex_to_rgb(start_color)
+    back = safe_hex_to_rgb(end_color)
     if gradient_type == "solid":
         color_mask = color_mask_cls(front_color=front, back_color=back)
     elif gradient_type == "radial":
@@ -388,35 +408,43 @@ async def ping():
     """Endpoint de healthcheck pour RapidAPI."""
     return {"status": "ok"}
 
-@app.api_route("/generate-qr", methods=["GET", "POST"])
-async def generate_qr(
-    request: Request,
-    data: str = Query(..., description="Text or URL to encode") if request.method == "GET" else Form(...),
-    file: str = Query("png") if request.method == "GET" else Form("png"),
-    size: int = Query(400) if request.method == "GET" else Form(400),
-    body_color: str = Query("#000000") if request.method == "GET" else Form("#000000"),
-    bg_color: str = Query("#FFFFFF") if request.method == "GET" else Form("#FFFFFF"),
-    transparent: bool = Query(False) if request.method == "GET" else Form(False),
-    module_style: str = Query("square") if request.method == "GET" else Form("square"),
-    gradient_type: str = Query("solid") if request.method == "GET" else Form("solid"),
-    start_color: str = Query("#000000") if request.method == "GET" else Form("#000000"),
-    end_color: str = Query("#FFFFFF") if request.method == "GET" else Form("#FFFFFF"),
-    caption: Optional[str] = Query(None) if request.method == "GET" else Form(None),
-    logo_url: Optional[str] = Query(None) if request.method == "GET" else Form(None),
-    logo: Optional[UploadFile] = File(None)
+@app.get("/generate-qr")
+async def generate_qr_get(
+    data: str = Query(..., description="Text or URL to encode"),
+    file: str = Query("png"),
+    size: int = Query(400),
+    body_color: str = Query("#000000"),
+    bg_color: str = Query("#FFFFFF"),
+    transparent: bool = Query(False),
+    module_style: str = Query("square"),
+    gradient_type: str = Query("solid"),
+    start_color: str = Query("#000000"),
+    end_color: str = Query("#FFFFFF"),
+    caption: str = Query("", description="Optional caption below the QR code."),
+    logo_url: str = Query("", description="URL of a logo image to embed (GET or POST).")
 ):
+    file = str(file or "png")
+    size = int(size or 400)
+    body_color = str(body_color or "#000000")
+    bg_color = str(bg_color or "#FFFFFF")
+    module_style = str(module_style or "square")
+    gradient_type = str(gradient_type or "solid")
+    start_color = str(start_color or "#000000")
+    end_color = str(end_color or "#FFFFFF")
+    caption = str(caption or "")
+    logo_url = str(logo_url or "")
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_H,
         box_size=10,
         border=4,
     )
     qr.add_data(data)
     qr.make(fit=True)
-    module_drawer = MODULE_STYLES.get(module_style, SquareModuleDrawer())
-    color_mask_cls = GRADIENTS.get(gradient_type, SolidFillColorMask)
-    front = hex_to_rgb(start_color)
-    back = (255,255,255,0) if transparent else hex_to_rgb(bg_color)
+    module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
+    color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
+    front = safe_hex_to_rgb(start_color)
+    back = safe_hex_to_rgb(bg_color) if not transparent else (255,255,255,0)
     if gradient_type == "solid":
         color_mask = color_mask_cls(front_color=front, back_color=back)
     elif gradient_type == "radial":
@@ -438,8 +466,112 @@ async def generate_qr(
         module_drawer=module_drawer,
         color_mask=color_mask
     ).convert("RGBA")
-    img = img.resize((size, size))
-    # Ajout du logo
+    img = img.resize((int(size), int(size)))
+    # Ajout du logo distant si fourni
+    if logo_url:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(logo_url)
+                resp.raise_for_status()
+                logo_img = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+                logo_size = int(int(size) * 0.2)
+                logo_img = logo_img.resize((logo_size, logo_size))
+                pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
+                img.paste(logo_img, pos, mask=logo_img)
+        except Exception:
+            pass
+    if caption:
+        img = add_caption(img, caption, int(size))
+    if transparent:
+        datas = img.getdata()
+        newData = []
+        for item in datas:
+            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append(item)
+        img.putdata(newData)
+    buf = io.BytesIO()
+    file_str = str(file or "png").lower()
+    if file_str == "svg":
+        qr_svg = qrcode.make(data, image_factory=SvgImage)
+        qr_svg.save(buf)
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="image/svg+xml")
+    elif file_str == "pdf":
+        img.save(buf, format="PDF")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="application/pdf")
+    elif file_str == "webp":
+        img.save(buf, format="WEBP")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="image/webp")
+    else:
+        img.save(buf, format=file_str.upper())
+        buf.seek(0)
+        return StreamingResponse(buf, media_type=f"image/{file_str}")
+
+@app.post("/generate-qr")
+async def generate_qr_post(
+    data: str = Form(..., description="Text or URL to encode"),
+    file: str = Form("png"),
+    size: int = Form(400),
+    body_color: str = Form("#000000"),
+    bg_color: str = Form("#FFFFFF"),
+    transparent: bool = Form(False),
+    module_style: str = Form("square"),
+    gradient_type: str = Form("solid"),
+    start_color: str = Form("#000000"),
+    end_color: str = Form("#FFFFFF"),
+    caption: str = Form("", description="Optional caption below the QR code."),
+    logo_url: str = Form("", description="URL of a logo image to embed (GET or POST)."),
+    logo: Optional[UploadFile] = File(None)
+):
+    file = str(file or "png")
+    size = int(size or 400)
+    body_color = str(body_color or "#000000")
+    bg_color = str(bg_color or "#FFFFFF")
+    module_style = str(module_style or "square")
+    gradient_type = str(gradient_type or "solid")
+    start_color = str(start_color or "#000000")
+    end_color = str(end_color or "#FFFFFF")
+    caption = str(caption or "")
+    logo_url = str(logo_url or "")
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
+    color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
+    front = safe_hex_to_rgb(start_color)
+    back = safe_hex_to_rgb(bg_color) if not transparent else (255,255,255,0)
+    if gradient_type == "solid":
+        color_mask = color_mask_cls(front_color=front, back_color=back)
+    elif gradient_type == "radial":
+        color_mask = color_mask_cls()
+        color_mask.center_color = front
+        color_mask.edge_color = back
+    elif gradient_type == "horizontal":
+        color_mask = color_mask_cls()
+        color_mask.left_color = front
+        color_mask.right_color = back
+    elif gradient_type == "vertical":
+        color_mask = color_mask_cls()
+        color_mask.top_color = front
+        color_mask.bottom_color = back
+    else:
+        color_mask = SolidFillColorMask(front_color=front, back_color=back)
+    img = qr.make_image(
+        image_factory=StyledPilImage,
+        module_drawer=module_drawer,
+        color_mask=color_mask
+    ).convert("RGBA")
+    img = img.resize((int(size), int(size)))
+    # Ajout du logo uploadé ou distant
     logo_img = None
     if logo is not None:
         logo_bytes = await logo.read()
@@ -453,14 +585,12 @@ async def generate_qr(
         except Exception:
             logo_img = None
     if logo_img:
-        logo_size = int(size * 0.2)
+        logo_size = int(int(size) * 0.2)
         logo_img = logo_img.resize((logo_size, logo_size))
         pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
         img.paste(logo_img, pos, mask=logo_img)
-    # Ajout du caption
     if caption:
-        img = add_caption(img, caption, size)
-    # Si transparent, rendre le fond vraiment transparent
+        img = add_caption(img, caption, int(size))
     if transparent:
         datas = img.getdata()
         newData = []
@@ -471,23 +601,24 @@ async def generate_qr(
                 newData.append(item)
         img.putdata(newData)
     buf = io.BytesIO()
-    if file == "svg":
+    file_str = str(file or "png").lower()
+    if file_str == "svg":
         qr_svg = qrcode.make(data, image_factory=SvgImage)
         qr_svg.save(buf)
         buf.seek(0)
         return StreamingResponse(buf, media_type="image/svg+xml")
-    elif file == "pdf":
+    elif file_str == "pdf":
         img.save(buf, format="PDF")
         buf.seek(0)
         return StreamingResponse(buf, media_type="application/pdf")
-    elif file == "webp":
+    elif file_str == "webp":
         img.save(buf, format="WEBP")
         buf.seek(0)
         return StreamingResponse(buf, media_type="image/webp")
     else:
-        img.save(buf, format=file.upper())
+        img.save(buf, format=file_str.upper())
         buf.seek(0)
-        return StreamingResponse(buf, media_type=f"image/{file}")
+        return StreamingResponse(buf, media_type=f"image/{file_str}")
 
 if __name__ == "__main__":
     import os

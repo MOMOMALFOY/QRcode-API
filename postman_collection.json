@@ -1,50 +1,73 @@
 {
   "info": {
-    "_postman_id": "qrcode-api-collection-unique",
-    "name": "Advanced QR Code API (Unified Endpoint)",
+    "_postman_id": "qrcode-api-collection-2methods",
+    "name": "Advanced QR Code API (GET & POST)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Generate QR Code (POST/GET)",
+      "name": "Generate QR Code (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "your-rapidapi-host", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/generate-qr?data=https://example.com&file=png&size=400&body_color=%23000000&bg_color=%23FFFFFF&transparent=false&module_style=square&gradient_type=solid&start_color=%23000000&end_color=%23FFFFFF&caption=MyQR&logo_url=https://site.com/logo.png",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["generate-qr"],
+          "query": [
+            { "key": "data", "value": "https://example.com", "description": "Text or URL to encode in the QR code." },
+            { "key": "file", "value": "png", "description": "Output format: png, svg, pdf, webp." },
+            { "key": "size", "value": "400", "description": "Size of the QR code in pixels." },
+            { "key": "body_color", "value": "#000000", "description": "Color of the QR code modules (default: black)." },
+            { "key": "bg_color", "value": "#FFFFFF", "description": "Background color (default: white)." },
+            { "key": "transparent", "value": "false", "description": "Set to true for transparent background." },
+            { "key": "module_style", "value": "square", "description": "Module style: square, rounded, gapped, circle, vertical, horizontal." },
+            { "key": "gradient_type", "value": "solid", "description": "Gradient type: solid, radial, horizontal, vertical." },
+            { "key": "start_color", "value": "#000000", "description": "Start color for the gradient." },
+            { "key": "end_color", "value": "#FFFFFF", "description": "End color for the gradient." },
+            { "key": "caption", "value": "My custom QR", "description": "Optional caption below the QR code." },
+            { "key": "logo_url", "value": "https://site.com/logo.png", "description": "URL of a logo image to embed (GET or POST)." }
+          ]
+        }
+      },
+      "description": "Generate a QR code with all available options using GET. All parameters are passed as query parameters. For a remote logo, use 'logo_url'.",
+      "response": [
+        { "name": "Image response (PNG)", "status": "OK", "code": 200, "header": [{ "key": "Content-Type", "value": "image/png" }], "body": "" },
+        { "name": "Error (not via RapidAPI)", "status": "Forbidden", "code": 403, "header": [{ "key": "Content-Type", "value": "application/json" }], "body": "{\n  \"error\": \"This API is only accessible via RapidAPI.\"\n}" }
+      ]
+    },
+    {
+      "name": "Generate QR Code (POST)",
       "request": {
         "method": "POST",
         "header": [
           { "key": "x-rapidapi-host", "value": "your-rapidapi-host", "type": "text" },
           { "key": "Content-Type", "value": "multipart/form-data", "type": "text" }
         ],
-        "url": {
-          "raw": "http://localhost:8000/generate-qr?transparent=true&size=400&logo_url=https://site.com/logo.png",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8000",
-          "path": ["generate-qr"],
-          "query": [
-            { "key": "transparent", "value": "true", "description": "Set to true for transparent background." },
-            { "key": "size", "value": "400", "description": "Size in pixels." },
-            { "key": "logo_url", "value": "https://site.com/logo.png", "description": "URL of a logo image to embed (GET or POST)." }
-          ]
-        },
         "body": {
           "mode": "formdata",
           "formdata": [
             { "key": "data", "value": "https://example.com", "type": "text", "description": "Text or URL to encode in the QR code." },
             { "key": "file", "value": "png", "type": "text", "description": "Output format: png, svg, pdf, webp." },
+            { "key": "size", "value": "400", "type": "text", "description": "Size of the QR code in pixels." },
             { "key": "body_color", "value": "#000000", "type": "text", "description": "Color of the QR code modules (default: black)." },
             { "key": "bg_color", "value": "#FFFFFF", "type": "text", "description": "Background color (default: white)." },
+            { "key": "transparent", "value": "false", "type": "text", "description": "Set to true for transparent background." },
             { "key": "module_style", "value": "square", "type": "text", "description": "Module style: square, rounded, gapped, circle, vertical, horizontal." },
             { "key": "gradient_type", "value": "solid", "type": "text", "description": "Gradient type: solid, radial, horizontal, vertical." },
             { "key": "start_color", "value": "#000000", "type": "text", "description": "Start color for the gradient." },
             { "key": "end_color", "value": "#FFFFFF", "type": "text", "description": "End color for the gradient." },
             { "key": "caption", "value": "My custom QR", "type": "text", "description": "Optional caption below the QR code." },
             { "key": "logo_url", "value": "https://site.com/logo.png", "type": "text", "description": "URL of a logo image to embed (GET or POST)." },
-            { "key": "logo", "type": "file", "src": "", "description": "Optional logo image to embed in the center of the QR code (POST only)." },
-            { "key": "transparent", "value": "false", "type": "text", "description": "Set to true for transparent background." },
-            { "key": "size", "value": "400", "type": "text", "description": "Size in pixels." }
+            { "key": "logo", "type": "file", "description": "Optional logo image to embed in the center of the QR code (POST only)." }
           ]
         }
       },
-      "description": "Generate a QR code with all available options. All parameters can be passed as query parameters (GET/POST) or as form-data (POST). For logo upload, use the 'logo' file field (POST only). For a remote logo, use 'logo_url' (GET or POST).",
+      "description": "Generate a QR code with all available options using POST. All parameters are passed as form-data. For logo upload, use the 'logo' file field (POST only). For a remote logo, use 'logo_url'.",
       "response": [
         { "name": "Image response (PNG)", "status": "OK", "code": 200, "header": [{ "key": "Content-Type", "value": "image/png" }], "body": "" },
         { "name": "Error (not via RapidAPI)", "status": "Forbidden", "code": 403, "header": [{ "key": "Content-Type", "value": "application/json" }], "body": "{\n  \"error\": \"This API is only accessible via RapidAPI.\"\n}" }
