@@ -1,0 +1,176 @@
+{
+  "info": {
+    "_postman_id": "qrcode-api-collection-003",
+    "name": "QR Code API (RapidAPI Ready) - Tous endpoints principaux",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Créer QR Code personnalisé (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded", "type": "text" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "data", "value": "https://example.com", "type": "text" },
+            { "key": "body_color", "value": "#000000", "type": "text" },
+            { "key": "bg_color", "value": "#FFFFFF", "type": "text" },
+            { "key": "size", "value": "400", "type": "text" },
+            { "key": "file", "value": "png", "type": "text" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/create-custom-qr", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["create-custom-qr"] }
+      }
+    },
+    {
+      "name": "Créer QR Code personnalisé (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/create-custom-qr?data=https://example.com&body_color=%23000000&bg_color=%23FFFFFF&size=400&file=png",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["create-custom-qr"],
+          "query": [
+            { "key": "data", "value": "https://example.com" },
+            { "key": "body_color", "value": "#000000" },
+            { "key": "bg_color", "value": "#FFFFFF" },
+            { "key": "size", "value": "400" },
+            { "key": "file", "value": "png" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Créer QR Code transparent (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded", "type": "text" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "data", "value": "https://transparent.com", "type": "text" },
+            { "key": "size", "value": "400", "type": "text" },
+            { "key": "file", "value": "png", "type": "text" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/create-transparent-qr", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["create-transparent-qr"] }
+      }
+    },
+    {
+      "name": "Créer QR Code transparent (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/create-transparent-qr?data=https://transparent.com&size=400&file=png",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["create-transparent-qr"],
+          "query": [
+            { "key": "data", "value": "https://transparent.com" },
+            { "key": "size", "value": "400" },
+            { "key": "file", "value": "png" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Créer QR Code avancé (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded", "type": "text" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "data", "value": "https://example.com", "type": "text" },
+            { "key": "module_style", "value": "circle", "type": "text" },
+            { "key": "gradient_type", "value": "radial", "type": "text" },
+            { "key": "start_color", "value": "#FF0000", "type": "text" },
+            { "key": "end_color", "value": "#0000FF", "type": "text" },
+            { "key": "caption", "value": "Mon QR personnalisé", "type": "text" },
+            { "key": "size", "value": "400", "type": "text" },
+            { "key": "file", "value": "png", "type": "text" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/create-advanced-qr", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["create-advanced-qr"] }
+      }
+    },
+    {
+      "name": "Créer QR Code dynamique (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded", "type": "text" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "target_url", "value": "https://openai.com", "type": "text" },
+            { "key": "expire_in_days", "value": "7", "type": "text" },
+            { "key": "module_style", "value": "rounded", "type": "text" },
+            { "key": "gradient_type", "value": "vertical", "type": "text" },
+            { "key": "start_color", "value": "#000000", "type": "text" },
+            { "key": "end_color", "value": "#00FF00", "type": "text" },
+            { "key": "size", "value": "400", "type": "text" },
+            { "key": "file", "value": "png", "type": "text" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/create-dynamic-qr", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["create-dynamic-qr"] }
+      }
+    },
+    {
+      "name": "Mettre à jour QR Code dynamique (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" },
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded", "type": "text" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "qr_id", "value": "<qr_id>", "type": "text" },
+            { "key": "new_url", "value": "https://nouvelle-destination.com", "type": "text" },
+            { "key": "extend_days", "value": "3", "type": "text" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/update-dynamic-qr", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["update-dynamic-qr"] }
+      }
+    },
+    {
+      "name": "Uploader une image (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-rapidapi-host", "value": "votre-rapidapi-host", "type": "text" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "file", "type": "file", "src": "<chemin/vers/image.png>" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/upload-image", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["upload-image"] }
+      }
+    }
+  ]
+} 
