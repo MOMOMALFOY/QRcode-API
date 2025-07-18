@@ -433,6 +433,11 @@ async def generate_qr_get(
     end_color = str(end_color or "#FFFFFF")
     caption = str(caption or "")
     logo_url = str(logo_url or "")
+    # PATCH: Force white background if transparent, and force webp if file is not png or webp
+    if transparent:
+        bg_color = "#FFFFFF"
+        if file.lower() not in ["png", "webp"]:
+            file = "webp"
     qr = qrcode.QRCode(
         version=1,
         error_correction=ERROR_CORRECT_H,
@@ -537,6 +542,11 @@ async def generate_qr_post(
     end_color = str(end_color or "#FFFFFF")
     caption = str(caption or "")
     logo_url = str(logo_url or "")
+    # PATCH: Force white background if transparent, and force webp if file is not png or webp
+    if transparent:
+        bg_color = "#FFFFFF"
+        if file.lower() not in ["png", "webp"]:
+            file = "webp"
     qr = qrcode.QRCode(
         version=1,
         error_correction=ERROR_CORRECT_H,

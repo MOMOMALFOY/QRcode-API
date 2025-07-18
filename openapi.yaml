@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  title: QR Code API
+  version: 1.0.0
+  description: API pour générer des QR codes personnalisés (GET et POST)
+servers:
+  - url: http://localhost:8000
+paths:
+  /generate-qr:
+    get:
+      summary: Générer un QR code (GET)
+      parameters:
+        - in: query
+          name: data
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: file
+          schema:
+            type: string
+            enum: [png, svg, pdf, webp]
+            default: png
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 400
+        - in: query
+          name: body_color
+          schema:
+            type: string
+            default: "#000000"
+        - in: query
+          name: bg_color
+          schema:
+            type: string
+            default: "#FFFFFF"
+        - in: query
+          name: transparent
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: module_style
+          schema:
+            type: string
+            enum: [square, rounded, gapped, circle, vertical, horizontal]
+            default: square
+        - in: query
+          name: gradient_type
+          schema:
+            type: string
+            enum: [solid, radial, horizontal, vertical]
+            default: solid
+        - in: query
+          name: start_color
+          schema:
+            type: string
+            default: "#000000"
+        - in: query
+          name: end_color
+          schema:
+            type: string
+            default: "#FFFFFF"
+        - in: query
+          name: caption
+          schema:
+            type: string
+            default: ""
+        - in: query
+          name: logo_url
+          schema:
+            type: string
+            default: ""
+      responses:
+        '200':
+          description: Image du QR code générée
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+    post:
+      summary: Générer un QR code (POST)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: string
+                file:
+                  type: string
+                  enum: [png, svg, pdf, webp]
+                  default: png
+                size:
+                  type: integer
+                  default: 400
+                body_color:
+                  type: string
+                  default: "#000000"
+                bg_color:
+                  type: string
+                  default: "#FFFFFF"
+                transparent:
+                  type: boolean
+                  default: false
+                module_style:
+                  type: string
+                  enum: [square, rounded, gapped, circle, vertical, horizontal]
+                  default: square
+                gradient_type:
+                  type: string
+                  enum: [solid, radial, horizontal, vertical]
+                  default: solid
+                start_color:
+                  type: string
+                  default: "#000000"
+                end_color:
+                  type: string
+                  default: "#FFFFFF"
+                caption:
+                  type: string
+                  default: ""
+                logo_url:
+                  type: string
+                  default: ""
+                logo:
+                  type: string
+                  format: binary
+            required:
+              - data
+      responses:
+        '200':
+          description: Image du QR code générée
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary 
