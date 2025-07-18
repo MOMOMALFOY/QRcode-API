@@ -472,7 +472,7 @@ async def generate_qr_get(
         module_drawer=module_drawer,
         color_mask=color_mask
     ).convert("RGBA")
-    img = img.resize((int(size), int(size)))
+    img = img.resize((int(size), int(size)), resample=Image.NEAREST)
     # Ajout du logo distant si fourni
     if logo_url:
         try:
@@ -492,7 +492,9 @@ async def generate_qr_get(
         datas = img.getdata()
         newData = []
         for item in datas:
-            if item[0] > 220 and item[1] > 220 and item[2] > 220:
+            # Utilise la luminance pour détecter tous les pixels clairs
+            luminance = 0.299 * item[0] + 0.587 * item[1] + 0.114 * item[2]
+            if luminance > 180:
                 newData.append((255, 255, 255, 0))
             else:
                 newData.append(item)
@@ -582,7 +584,7 @@ async def generate_qr_post(
         module_drawer=module_drawer,
         color_mask=color_mask
     ).convert("RGBA")
-    img = img.resize((int(size), int(size)))
+    img = img.resize((int(size), int(size)), resample=Image.NEAREST)
     # Ajout du logo uploadé ou distant
     logo_img = None
     if logo is not None:
@@ -607,7 +609,9 @@ async def generate_qr_post(
         datas = img.getdata()
         newData = []
         for item in datas:
-            if item[0] > 220 and item[1] > 220 and item[2] > 220:
+            # Utilise la luminance pour détecter tous les pixels clairs
+            luminance = 0.299 * item[0] + 0.587 * item[1] + 0.114 * item[2]
+            if luminance > 180:
                 newData.append((255, 255, 255, 0))
             else:
                 newData.append(item)
