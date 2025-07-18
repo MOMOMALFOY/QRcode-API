@@ -172,7 +172,7 @@ async def create_transparent_qr(
     datas = img.getdata()
     newData = []
     for item in datas:
-        if item[0] > 250 and item[1] > 250 and item[2] > 250:
+        if item[0] > 220 and item[1] > 220 and item[2] > 220:
             newData.append((255, 255, 255, 0))
         else:
             newData.append(item)
@@ -492,7 +492,7 @@ async def generate_qr_get(
         datas = img.getdata()
         newData = []
         for item in datas:
-            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+            if item[0] > 220 and item[1] > 220 and item[2] > 220:
                 newData.append((255, 255, 255, 0))
             else:
                 newData.append(item)
@@ -607,7 +607,7 @@ async def generate_qr_post(
         datas = img.getdata()
         newData = []
         for item in datas:
-            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+            if item[0] > 220 and item[1] > 220 and item[2] > 220:
                 newData.append((255, 255, 255, 0))
             else:
                 newData.append(item)
