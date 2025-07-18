@@ -10,6 +10,7 @@ import io
 import base64
 import uuid
 from datetime import datetime, timedelta
+import httpx
 from qrcode.image.svg import SvgImage
 
 app = FastAPI(title="QR Code API")
@@ -386,6 +387,107 @@ async def accueil():
 async def ping():
     """Endpoint de healthcheck pour RapidAPI."""
     return {"status": "ok"}
+
+@app.api_route("/generate-qr", methods=["GET", "POST"])
+async def generate_qr(
+    request: Request,
+    data: str = Query(..., description="Text or URL to encode") if request.method == "GET" else Form(...),
+    file: str = Query("png") if request.method == "GET" else Form("png"),
+    size: int = Query(400) if request.method == "GET" else Form(400),
+    body_color: str = Query("#000000") if request.method == "GET" else Form("#000000"),
+    bg_color: str = Query("#FFFFFF") if request.method == "GET" else Form("#FFFFFF"),
+    transparent: bool = Query(False) if request.method == "GET" else Form(False),
+    module_style: str = Query("square") if request.method == "GET" else Form("square"),
+    gradient_type: str = Query("solid") if request.method == "GET" else Form("solid"),
+    start_color: str = Query("#000000") if request.method == "GET" else Form("#000000"),
+    end_color: str = Query("#FFFFFF") if request.method == "GET" else Form("#FFFFFF"),
+    caption: Optional[str] = Query(None) if request.method == "GET" else Form(None),
+    logo_url: Optional[str] = Query(None) if request.method == "GET" else Form(None),
+    logo: Optional[UploadFile] = File(None)
+):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    module_drawer = MODULE_STYLES.get(module_style, SquareModuleDrawer())
+    color_mask_cls = GRADIENTS.get(gradient_type, SolidFillColorMask)
+    front = hex_to_rgb(start_color)
+    back = (255,255,255,0) if transparent else hex_to_rgb(bg_color)
+    if gradient_type == "solid":
+        color_mask = color_mask_cls(front_color=front, back_color=back)
+    elif gradient_type == "radial":
+        color_mask = color_mask_cls()
+        color_mask.center_color = front
+        color_mask.edge_color = back
+    elif gradient_type == "horizontal":
+        color_mask = color_mask_cls()
+        color_mask.left_color = front
+        color_mask.right_color = back
+    elif gradient_type == "vertical":
+        color_mask = color_mask_cls()
+        color_mask.top_color = front
+        color_mask.bottom_color = back
+    else:
+        color_mask = SolidFillColorMask(front_color=front, back_color=back)
+    img = qr.make_image(
+        image_factory=StyledPilImage,
+        module_drawer=module_drawer,
+        color_mask=color_mask
+    ).convert("RGBA")
+    img = img.resize((size, size))
+    # Ajout du logo
+    logo_img = None
+    if logo is not None:
+        logo_bytes = await logo.read()
+        logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+    elif logo_url:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(logo_url)
+                resp.raise_for_status()
+                logo_img = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+        except Exception:
+            logo_img = None
+    if logo_img:
+        logo_size = int(size * 0.2)
+        logo_img = logo_img.resize((logo_size, logo_size))
+        pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
+        img.paste(logo_img, pos, mask=logo_img)
+    # Ajout du caption
+    if caption:
+        img = add_caption(img, caption, size)
+    # Si transparent, rendre le fond vraiment transparent
+    if transparent:
+        datas = img.getdata()
+        newData = []
+        for item in datas:
+            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append(item)
+        img.putdata(newData)
+    buf = io.BytesIO()
+    if file == "svg":
+        qr_svg = qrcode.make(data, image_factory=SvgImage)
+        qr_svg.save(buf)
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="image/svg+xml")
+    elif file == "pdf":
+        img.save(buf, format="PDF")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="application/pdf")
+    elif file == "webp":
+        img.save(buf, format="WEBP")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="image/webp")
+    else:
+        img.save(buf, format=file.upper())
+        buf.seek(0)
+        return StreamingResponse(buf, media_type=f"image/{file}")
 
 if __name__ == "__main__":
     import os
