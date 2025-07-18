@@ -95,7 +95,8 @@ async def get_custom_qr(
     body_color: Optional[str] = Query("#000000"),
     bg_color: Optional[str] = Query("#FFFFFF"),
     size: Optional[int] = Query(600),
-    file: Optional[str] = Query("png")
+    file: Optional[str] = Query("png"),
+    logo: Optional[str] = Query(None)
 ):
     qr = qrcode.QRCode(
         version=1,
@@ -122,7 +123,8 @@ async def get_custom_qr(
 async def create_transparent_qr(
     data: str = Form(...),
     size: Optional[int] = Form(400),
-    file: Optional[str] = Form("png")
+    file: Optional[str] = Form("png"),
+    logo: Optional[UploadFile] = File(None)
 ):
     qr = qrcode.QRCode(
         version=1,
@@ -140,6 +142,13 @@ async def create_transparent_qr(
         color_mask=SolidFillColorMask(front_color=front_rgb, back_color=back_rgb)
     ).convert("RGBA")
     img = img.resize((size, size))
+    if logo:
+        logo_bytes = await logo.read()
+        logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+        logo_size = int(size * 0.2)
+        logo_img = logo_img.resize((logo_size, logo_size))
+        pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
+        img.paste(logo_img, pos, mask=logo_img)
     datas = img.getdata()
     newData = []
     for item in datas:
@@ -158,7 +167,8 @@ async def create_transparent_qr(
 async def get_transparent_qr(
     data: str = Query(...),
     size: Optional[int] = Query(400),
-    file: Optional[str] = Query("png")
+    file: Optional[str] = Query("png"),
+    logo: Optional[str] = Query(None)
 ):
     qr = qrcode.QRCode(
         version=1,
@@ -176,14 +186,6 @@ async def get_transparent_qr(
         color_mask=SolidFillColorMask(front_color=front_rgb, back_color=back_rgb)
     ).convert("RGBA")
     img = img.resize((size, size))
-    datas = img.getdata()
-    newData = []
-    for item in datas:
-        if item[0] > 250 and item[1] > 250 and item[2] > 250:
-            newData.append((255, 255, 255, 0))
-        else:
-            newData.append(item)
-    img.putdata(newData)
     buf = io.BytesIO()
     img.save(buf, format=file.upper())
     buf.seek(0)
@@ -215,7 +217,8 @@ async def create_advanced_qr(
     caption: Optional[str] = Form(None),
     size: int = Form(600),
     file: str = Form("png"),
-    as_base64: bool = Form(False)
+    as_base64: bool = Form(False),
+    logo: Optional[UploadFile] = File(None)
 ):
     qr = qrcode.QRCode(
         version=1,
@@ -251,6 +254,13 @@ async def create_advanced_qr(
         color_mask=color_mask
     ).convert("RGBA")
     img = img.resize((size, size))
+    if logo:
+        logo_bytes = await logo.read()
+        logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+        logo_size = int(size * 0.2)
+        logo_img = logo_img.resize((logo_size, logo_size))
+        pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
+        img.paste(logo_img, pos, mask=logo_img)
     if caption:
         img = add_caption(img, caption, size)
     buf = io.BytesIO()
@@ -285,7 +295,8 @@ async def create_dynamic_qr(
     start_color: str = Form("#000000"),
     end_color: str = Form("#FFFFFF"),
     size: int = Form(600),
-    file: str = Form("png")
+    file: str = Form("png"),
+    logo: Optional[UploadFile] = File(None)
 ):
     qr_id = str(uuid.uuid4())
     expire_at = datetime.utcnow() + timedelta(days=expire_in_days)
@@ -326,6 +337,13 @@ async def create_dynamic_qr(
         color_mask=color_mask
     ).convert("RGBA")
     img = img.resize((size, size))
+    if logo:
+        logo_bytes = await logo.read()
+        logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+        logo_size = int(size * 0.2)
+        logo_img = logo_img.resize((logo_size, logo_size))
+        pos = ((img.size[0] - logo_size) // 2, (img.size[1] - logo_size) // 2)
+        img.paste(logo_img, pos, mask=logo_img)
     buf = io.BytesIO()
     img.save(buf, format=file.upper())
     buf.seek(0)
