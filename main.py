@@ -438,6 +438,8 @@ async def generate_qr_get(
         bg_color = "#FFFFFF"
         if file.lower() not in ["png", "webp"]:
             file = "webp"
+    # Toujours passer un fond RGB à la génération du QR code
+    back = safe_hex_to_rgb(bg_color)
     qr = qrcode.QRCode(
         version=1,
         error_correction=ERROR_CORRECT_H,
@@ -449,7 +451,6 @@ async def generate_qr_get(
     module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
     color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
     front = safe_hex_to_rgb(start_color)
-    back = safe_hex_to_rgb(bg_color) if not transparent else (255,255,255,0)
     if gradient_type == "solid":
         color_mask = color_mask_cls(front_color=front, back_color=back)
     elif gradient_type == "radial":
@@ -547,6 +548,8 @@ async def generate_qr_post(
         bg_color = "#FFFFFF"
         if file.lower() not in ["png", "webp"]:
             file = "webp"
+    # Toujours passer un fond RGB à la génération du QR code
+    back = safe_hex_to_rgb(bg_color)
     qr = qrcode.QRCode(
         version=1,
         error_correction=ERROR_CORRECT_H,
@@ -558,7 +561,6 @@ async def generate_qr_post(
     module_drawer = MODULE_STYLES.get(str(module_style), SquareModuleDrawer())
     color_mask_cls = GRADIENTS.get(str(gradient_type), SolidFillColorMask)
     front = safe_hex_to_rgb(start_color)
-    back = safe_hex_to_rgb(bg_color) if not transparent else (255,255,255,0)
     if gradient_type == "solid":
         color_mask = color_mask_cls(front_color=front, back_color=back)
     elif gradient_type == "radial":
