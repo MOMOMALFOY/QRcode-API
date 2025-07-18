@@ -352,9 +352,10 @@ async def update_dynamic_qr(qr_id: str = Form(...), new_url: str = Form(...), ex
 
 @app.middleware("http")
 async def check_rapidapi_host(request: Request, call_next):
-    # Refuse toute requête qui ne vient pas de RapidAPI (pas d'en-tête x-rapidapi-host)
-    if not request.headers.get("x-rapidapi-host"):
-        return JSONResponse({"error": "Cette API n'est accessible que via RapidAPI."}, status_code=403)
+    # Autorise /ping et / même sans header pour le healthcheck
+    if request.url.path not in ["/ping", "/"]:
+        if not request.headers.get("x-rapidapi-host"):
+            return JSONResponse({"error": "Cette API n'est accessible que via RapidAPI."}, status_code=403)
     return await call_next(request)
 
 @app.get("/", tags=["Accueil"])
