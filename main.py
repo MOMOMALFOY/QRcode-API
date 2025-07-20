@@ -16,6 +16,11 @@ from qrcode.constants import ERROR_CORRECT_H
 
 app = FastAPI(title="QR Code API")
 
+# --- AJOUT : Vérification proxy RapidAPI ---
+async def verify_rapidapi_proxy(request: Request):
+    if not (request.headers.get("x-rapidapi-host") or request.headers.get("x-rapidapi-user")):
+        raise HTTPException(status_code=401, detail="Accès uniquement via le proxy RapidAPI.")
+
 # Stockage en mémoire pour les QR dynamiques
 DYNAMIC_QR_DB = {}
 
@@ -58,12 +63,14 @@ def safe_hex_to_rgb(hex_color: str, alpha: Optional[int] = None, force_rgba: boo
         return (0, 0, 0)
 
 @app.post("/upload-image")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(request: Request, file: UploadFile = File(...)):
+    await verify_rapidapi_proxy(request)
     content = await file.read()
     return {"filename": file.filename, "content": content.hex()}
 
 @app.post("/create-custom-qr")
 async def create_custom_qr(
+    request: Request,
     data: str = Form(...),
     body_color: str = Form("#000000"),
     bg_color: str = Form("#FFFFFF"),
@@ -71,6 +78,7 @@ async def create_custom_qr(
     logo: Optional[UploadFile] = File(None),
     file: str = Form("png")
 ):
+    await verify_rapidapi_proxy(request)
     body_color = str(body_color or "#000000")
     bg_color = str(bg_color or "#FFFFFF")
     file = str(file or "png")
@@ -105,6 +113,7 @@ async def create_custom_qr(
 
 @app.get("/create-custom-qr")
 async def get_custom_qr(
+    request: Request,
     data: str = Query(...),
     body_color: str = Query("#000000"),
     bg_color: str = Query("#FFFFFF"),
@@ -112,6 +121,7 @@ async def get_custom_qr(
     file: str = Query("png"),
     logo: Optional[str] = Query(None)
 ):
+    await verify_rapidapi_proxy(request)
     body_color = str(body_color or "#000000")
     bg_color = str(bg_color or "#FFFFFF")
     file = str(file or "png")
@@ -139,11 +149,13 @@ async def get_custom_qr(
 
 @app.post("/create-transparent-qr")
 async def create_transparent_qr(
+    request: Request,
     data: str = Form(...),
     size: int = Form(400),
     file: str = Form("png"),
     logo: Optional[UploadFile] = File(None)
 ):
+    await verify_rapidapi_proxy(request)
     file = str(file or "png")
     size = int(size or 400)
     qr = qrcode.QRCode(
@@ -184,11 +196,13 @@ async def create_transparent_qr(
 
 @app.get("/create-transparent-qr")
 async def get_transparent_qr(
+    request: Request,
     data: str = Query(...),
     size: int = Query(400),
     file: str = Query("png"),
     logo: Optional[str] = Query(None)
 ):
+    await verify_rapidapi_proxy(request)
     file = str(file or "png")
     size = int(size or 400)
     qr = qrcode.QRCode(
@@ -229,6 +243,7 @@ def add_caption(img, caption, size):
 
 @app.post("/create-advanced-qr")
 async def create_advanced_qr(
+    request: Request,
     data: str = Form(...),
     module_style: str = Form("square"),
     gradient_type: str = Form("solid"),
@@ -241,6 +256,7 @@ async def create_advanced_qr(
     as_base64: bool = Form(False),
     logo: Optional[UploadFile] = File(None)
 ):
+    await verify_rapidapi_proxy(request)
     qr = qrcode.QRCode(
         version=1,
         error_correction=ERROR_CORRECT_H,
@@ -309,6 +325,7 @@ async def create_advanced_qr(
 
 @app.post("/create-dynamic-qr")
 async def create_dynamic_qr(
+    request: Request,
     target_url: str = Form(...),
     expire_in_days: int = Form(7),
     module_style: str = Form("square"),
@@ -319,6 +336,7 @@ async def create_dynamic_qr(
     file: str = Form("png"),
     logo: Optional[UploadFile] = File(None)
 ):
+    await verify_rapidapi_proxy(request)
     qr_id = str(uuid.uuid4())
     expire_at = datetime.utcnow() + timedelta(days=expire_in_days)
     DYNAMIC_QR_DB[qr_id] = {"target_url": target_url, "expire_at": expire_at}
@@ -371,7 +389,8 @@ async def create_dynamic_qr(
     return StreamingResponse(buf, media_type=f"image/{file}")
 
 @app.get("/redirect/{qr_id}")
-async def redirect_dynamic_qr(qr_id: str):
+async def redirect_dynamic_qr(request: Request, qr_id: str):
+    await verify_rapidapi_proxy(request)
     qr_info = DYNAMIC_QR_DB.get(qr_id)
     if not qr_info:
         return JSONResponse({"error": "QR code inconnu ou expiré."}, status_code=404)
@@ -380,7 +399,8 @@ async def redirect_dynamic_qr(qr_id: str):
     return RedirectResponse(qr_info["target_url"])
 
 @app.post("/update-dynamic-qr")
-async def update_dynamic_qr(qr_id: str = Form(...), new_url: str = Form(...), extend_days: int = Form(0)):
+async def update_dynamic_qr(request: Request, qr_id: str = Form(...), new_url: str = Form(...), extend_days: int = Form(0)):
+    await verify_rapidapi_proxy(request)
     qr_info = DYNAMIC_QR_DB.get(qr_id)
     if not qr_info:
         return JSONResponse({"error": "QR code inconnu."}, status_code=404)
@@ -388,14 +408,6 @@ async def update_dynamic_qr(qr_id: str = Form(...), new_url: str = Form(...), ex
     if extend_days > 0:
         qr_info["expire_at"] = qr_info["expire_at"] + timedelta(days=extend_days)
     return {"message": "QR code dynamique mis à jour.", "expire_at": qr_info["expire_at"].isoformat()}
-
-@app.middleware("http")
-async def check_rapidapi_host(request: Request, call_next):
-    # Autorise /ping et / même sans header pour le healthcheck
-    if request.url.path not in ["/ping", "/"]:
-        if not request.headers.get("x-rapidapi-host"):
-            return JSONResponse({"error": "Cette API n'est accessible que via RapidAPI."}, status_code=403)
-    return await call_next(request)
 
 @app.get("/", tags=["Accueil"])
 async def accueil():
@@ -410,6 +422,7 @@ async def ping():
 
 @app.get("/generate-qr")
 async def generate_qr_get(
+    request: Request,
     data: str = Query(..., description="Text or URL to encode"),
     file: str = Query("png"),
     size: int = Query(400),
@@ -423,6 +436,7 @@ async def generate_qr_get(
     caption: str = Query("", description="Optional caption below the QR code."),
     logo_url: str = Query("", description="URL of a logo image to embed (GET or POST).")
 ):
+    await verify_rapidapi_proxy(request)
     file = str(file or "png")
     size = int(size or 400)
     body_color = str(body_color or "#000000")
@@ -521,6 +535,7 @@ async def generate_qr_get(
 
 @app.post("/generate-qr")
 async def generate_qr_post(
+    request: Request,
     data: str = Form(..., description="Text or URL to encode"),
     file: str = Form("png"),
     size: int = Form(400),
@@ -535,6 +550,7 @@ async def generate_qr_post(
     logo_url: str = Form("", description="URL of a logo image to embed (GET or POST)."),
     logo: Optional[UploadFile] = File(None)
 ):
+    await verify_rapidapi_proxy(request)
     file = str(file or "png")
     size = int(size or 400)
     body_color = str(body_color or "#000000")
