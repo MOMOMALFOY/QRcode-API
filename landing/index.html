@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRCODE_API - QR Code Generator</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #e3f6e8 0%, #dbeafe 100%);
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #232323;
+            border-radius: 32px;
+            box-shadow: 0 8px 32px #0002;
+            display: flex;
+            padding: 0;
+            color: #e6ffe6;
+            overflow: hidden;
+        }
+        .left-panel {
+            flex: 2;
+            padding: 64px 56px 56px 56px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .tabs {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+        .tab {
+            background: none;
+            border: none;
+            color: #baffba;
+            font-size: 1.08em;
+            padding: 12px 18px 10px 18px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab.active {
+            background: #181818;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 4px 12px #0002;
+        }
+        .tab svg {
+            width: 22px;
+            height: 22px;
+            vertical-align: middle;
+        }
+        .form-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .form-subtitle {
+            color: #baffba;
+            font-size: 1.08em;
+            margin-bottom: 24px;
+        }
+        .main-input-row {
+            display: flex;
+            align-items: center;
+            background: #181818;
+            border-radius: 16px;
+            padding: 0 0 0 28px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px #0001;
+        }
+        .main-input-row input, .main-input-row textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.18em;
+            padding: 22px 0;
+            outline: none;
+        }
+        .main-input-row input::placeholder, .main-input-row textarea::placeholder {
+            color: #baffba;
+            opacity: 1;
+            font-size: 1.08em;
+        }
+        .main-input-row button {
+            background: none;
+            border: none;
+            color: #baffba;
+            font-size: 1.3em;
+            padding: 0 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            border-radius: 0 16px 16px 0;
+            transition: background 0.2s;
+        }
+        .main-input-row button:hover {
+            background: #2e2e2e;
+        }
+        .input-help {
+            color: #baffba;
+            font-size: 0.98em;
+            margin-bottom: 18px;
+            margin-left: 6px;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 22px 28px;
+            margin: 32px 0 0 0;
+            align-items: end;
+            width: 100%;
+        }
+        .options > div {
+            min-width: 0;
+            max-width: 210px;
+            padding: 0 6px 0 0;
+        }
+        .options label {
+            font-size: 0.97em;
+            color: #a0e6a0;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .options input[type="text"], .options input[type="number"], .options select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1.5px solid #333;
+            background: #292929;
+            color: #e6ffe6;
+            font-size: 1em;
+            transition: border 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .options input[type="color"] {
+            padding: 0;
+            width: 38px;
+            height: 38px;
+            border: none;
+            background: none;
+        }
+        .options input[type="file"] {
+            background: none;
+            color: #baffba;
+        }
+        .options input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4caf50;
+        }
+        .options .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 22px;
+            background: linear-gradient(90deg, #4caf50 60%, #43e97b 100%);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.18em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 40px;
+            box-shadow: 0 2px 8px #0002;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        button[type="submit"]:hover {
+            background: linear-gradient(90deg, #43e97b 0%, #38d39f 100%);
+            box-shadow: 0 4px 16px #4caf5040;
+        }
+        .right-panel {
+            flex: 1;
+            background: #181818;
+            border-radius: 0 32px 32px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 18px 40px 18px;
+            min-width: 340px;
+        }
+        .qr-preview {
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
+            min-height: 260px;
+            min-width: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 12px #0001;
+        }
+        .qr-preview img {
+            max-width: 220px;
+            max-height: 220px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #0002;
+        }
+        .qr-actions {
+            display: flex;
+            gap: 14px;
+            margin-top: 10px;
+        }
+        .qr-actions button {
+            background: #292929;
+            color: #baffba;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            box-shadow: 0 1px 4px #0001;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .qr-actions button:hover {
+            background: #4caf50;
+            color: #fff;
+        }
+        .error {
+            color: #ffbaba;
+            margin-top: 14px;
+            text-align: center;
+            font-size: 1.08em;
+        }
+        ::placeholder {
+            color: #a0e6a0;
+            opacity: 1;
+            font-size: 1em;
+        }
+        .loader {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 4px solid #baffba;
+            border-radius: 50%;
+            border-top: 4px solid #4caf50;
+            animation: spin 1s linear infinite;
+            margin: 32px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success-msg {
+            color: #4caf50;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.08em;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 1100px) {
+            .main-container { flex-direction: column; padding: 0; }
+            .left-panel, .right-panel { border-radius: 0; }
+            .left-panel { padding: 36px 16px 24px 16px; }
+            .right-panel { padding: 28px 12px 18px 12px; min-width: unset; }
+            .qr-preview { min-width: 180px; min-height: 180px; }
+            .options { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .options { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="tabs" id="tabs"></div>
+            <div class="form-title" id="formTitle"></div>
+            <div class="form-subtitle" id="formSubtitle"></div>
+            <form id="qrForm" autocomplete="off">
+                <div class="main-input-row" id="mainInputRow"></div>
+                <div class="input-help" id="inputHelp"></div>
+                <button type="button" id="toggleAdvanced" style="margin:18px 0 0 0;display:block;width:fit-content;padding:10px 22px;background:#292929;color:#baffba;border:none;border-radius:8px;font-size:1em;cursor:pointer;box-shadow:0 1px 4px #0001;">Show advanced options</button>
+                <div class="options" id="optionsRow" style="display:none;"></div>
+                <button type="submit">Generate QR Code</button>
+            </form>
+            <div class="error" id="errorMsg"></div>
+        </div>
+        <div class="right-panel">
+            <div class="qr-preview" id="qrResult">QR code preview</div>
+            <div class="qr-actions" id="qrActions" style="display:none;">
+                <button id="downloadBtn" title="Download"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v9m0 0l-4-4m4 4l4-4"/><rect x="4" y="17" width="16" height="2" rx="1"/></svg></button>
+                <button id="copyBtn" title="Copy"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg></button>
+                <button id="paletteBtn" title="Customize"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8.5" cy="10.5" r="1.5"/><circle cx="15.5" cy="10.5" r="1.5"/><circle cx="12" cy="15.5" r="1.5"/></svg></button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Définition des onglets et champs principaux
+        const tabDefs = [
+            { key: 'url', label: 'URL', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 7a5 5 0 0 1 0 10l-4 0"/><path d="M7 17a5 5 0 0 1 0-10l4 0"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`, title: 'Redirect to an existing web URL', subtitle: '', placeholder: 'Enter URL', help: 'Try something like https://example.com/' },
+            { key: 'pdf', label: 'PDF', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><polyline points="14,2 14,8 20,8"/></svg>`, title: 'PDF QR Code', subtitle: '', placeholder: 'Enter PDF URL', help: 'Paste a direct link to a PDF file.' },
+            { key: 'multiurl', label: 'Multi-Url', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>`, title: 'Multi-URL QR Code', subtitle: '', placeholder: 'Enter URLs (one per line)', help: 'Each line will be a different URL.' },
+            { key: 'contact', label: 'Contact', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>`, title: 'Contact QR Code', subtitle: '', placeholder: 'Paste vCard or contact info', help: 'Paste a vCard or contact text.' },
+            { key: 'text', label: 'Plain Text', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>`, title: 'Plain Text QR Code', subtitle: '', placeholder: 'Enter your text', help: 'Any text will be encoded.' },
+            { key: 'app', label: 'App', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3"/></svg>`, title: 'App Link QR Code', subtitle: '', placeholder: 'Enter app link', help: 'Paste a deep link or app URL.' },
+            { key: 'sms', label: 'SMS', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="16,3 12,7 8,3"/></svg>`, title: 'SMS QR Code', subtitle: '', placeholder: 'Enter phone and message', help: 'Format: +33612345678:Your message' },
+            { key: 'email', label: 'Email', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="2,7 12,13 22,7"/></svg>`, title: 'Email QR Code', subtitle: '', placeholder: 'Enter email, subject, message', help: 'Format: email@example.com?subject=...&body=...' },
+            { key: 'phone', label: 'Phone', icon: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.72 19.72 0 0 1 3 5.18 2 2 0 0 1 5 3h2.09a2 2 0 0 1 2 1.72c.13 1.13.37 2.23.72 3.28a2 2 0 0 1-.45 2.11l-1.27 1.27a16 16 0 0 0 6.29 6.29l1.27-1.27a2 2 0 0 1 2.11-.45c1.05.35 2.15.59 3.28.72A2 2 0 0 1 22 16.92z"/></svg>`, title: 'Phone QR Code', subtitle: '', placeholder: 'Enter phone number', help: 'Format: +33612345678' }
+        ];
+        // Génération des onglets
+        const tabsDiv = document.getElementById('tabs');
+        tabDefs.forEach((tab, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'tab' + (i === 0 ? ' active' : '');
+            btn.innerHTML = tab.icon + '<span>' + tab.label + '</span>';
+            btn.dataset.tab = tab.key;
+            btn.onclick = () => setTab(tab.key);
+            tabsDiv.appendChild(btn);
+        });
+        // Champs principaux selon l'onglet
+        function getMainInput(tab) {
+            switch(tab) {
+                case 'url':
+                case 'pdf':
+                case 'app':
+                case 'phone':
+                    return `<input type='text' id='data' name='data' placeholder='${tabDefs.find(t=>t.key===tab).placeholder}' required>`;
+                case 'multiurl':
+                    return `<textarea id='data' name='data' rows='2' placeholder='${tabDefs.find(t=>t.key===tab).placeholder}' required></textarea>`;
+                case 'contact':
+                    return `<textarea id='data' name='data' rows='3' placeholder='${tabDefs.find(t=>t.key===tab).placeholder}'></textarea>`;
+                case 'text':
+                    return `<textarea id='data' name='data' rows='2' placeholder='${tabDefs.find(t=>t.key===tab).placeholder}'></textarea>`;
+                case 'sms':
+                    return `<input type='text' id='data' name='data' placeholder='+33612345678:Votre message' required>`;
+                case 'email':
+                    return `<input type='text' id='data' name='data' placeholder='email@example.com?subject=...&body=...' required>`;
+                default:
+                    return `<input type='text' id='data' name='data' required>`;
+            }
+        }
+        // Options avancées supportées par l'API
+        function getOptions() {
+            return [
+                { label: 'Format', html: `<select id='file' name='file'><option value='png'>PNG</option><option value='svg'>SVG</option><option value='pdf'>PDF</option><option value='webp'>WEBP</option></select>` },
+                { label: 'Size (px)', html: `<input type='number' id='size' name='size' min='100' max='2000' value='400'>` },
+                { label: 'QR Color', html: `<input type='color' id='body_color' name='body_color' value='#000000'>` },
+                { label: 'Background', html: `<input type='color' id='bg_color' name='bg_color' value='#FFFFFF'>` },
+                { label: 'Transparent', html: `<input type='checkbox' id='transparent' name='transparent'>` },
+                { label: 'Module style', html: `<select id='module_style' name='module_style'><option value='square'>Square</option><option value='rounded'>Rounded</option><option value='gapped'>Gapped</option><option value='circle'>Circle</option><option value='vertical'>Vertical</option><option value='horizontal'>Horizontal</option></select>` },
+                { label: 'Gradient type', html: `<select id='gradient_type' name='gradient_type'><option value='solid'>Solid</option><option value='radial'>Radial</option><option value='horizontal'>Horizontal</option><option value='vertical'>Vertical</option></select>` },
+                { label: 'Gradient start', html: `<input type='color' id='start_color' name='start_color' value='#000000'>` },
+                { label: 'Gradient end', html: `<input type='color' id='end_color' name='end_color' value='#FFFFFF'>` },
+                { label: 'Caption', html: `<input type='text' id='caption' name='caption' placeholder=''>` },
+                { label: 'Logo (URL)', html: `<input type='text' id='logo_url' name='logo_url' placeholder='https://...'>` },
+                { label: 'Logo (upload)', html: `<input type='file' id='logo' name='logo' accept='image/*'>` }
+            ];
+        }
+        // Affichage dynamique selon l'onglet
+        // Toggle advanced options (declare above setTab)
+        let advancedVisible = false;
+        function setTab(tab) {
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.tab[data-tab="'+tab+'"').classList.add('active');
+            const tabDef = tabDefs.find(t=>t.key===tab);
+            document.getElementById('formTitle').textContent = tabDef.title;
+            document.getElementById('formSubtitle').textContent = tabDef.subtitle;
+            document.getElementById('mainInputRow').innerHTML = getMainInput(tab) + `<button type='button' tabindex='-1'><svg width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M15 9l-6 6M9 9l6 6'/></svg></button>`;
+            document.getElementById('inputHelp').textContent = tabDef.help;
+            // Options avancées
+            const opts = getOptions();
+            document.getElementById('optionsRow').innerHTML = opts.map(o => `<div><label>${o.label}</label>${o.html}</div>`).join('');
+            // Always re-select toggleBtn/optionsRow after DOM update
+            const toggleBtn = document.getElementById('toggleAdvanced');
+            const optionsRow = document.getElementById('optionsRow');
+            optionsRow.style.display = 'none';
+            advancedVisible = false;
+            toggleBtn.textContent = 'Show advanced options';
+            toggleBtn.onclick = function() {
+                advancedVisible = !advancedVisible;
+                optionsRow.style.display = advancedVisible ? '' : 'none';
+                toggleBtn.textContent = advancedVisible ? 'Hide advanced options' : 'Show advanced options';
+            };
+        }
+        // Détection automatique de l'URL de l'API
+        function getApiUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:8000/generate-qr';
+            }
+            return '/QRCODE_API/generate-qr';
+        }
+        // Génération du QR code (extrait dans une fonction)
+        let debounceTimeout;
+        let lastSuccessTimeout;
+        async function generateQRCode() {
+            const tab = document.querySelector('.tab.active').dataset.tab;
+            let dataEl = document.getElementById('data');
+            let data = dataEl ? dataEl.value.trim() : '';
+            const submitBtn = document.querySelector('button[type="submit"]');
+            // Désactive le bouton si champ vide
+            submitBtn.disabled = !data;
+            if (!data) {
+                document.getElementById('qrResult').innerHTML = 'QR code preview';
+                document.getElementById('errorMsg').textContent = '';
+                document.getElementById('qrActions').style.display = 'none';
+                document.getElementById('successMsg')?.remove();
+                return;
+            }
+            document.getElementById('qrResult').innerHTML = '<div class="loader"></div>';
+            document.getElementById('errorMsg').textContent = '';
+            document.getElementById('qrActions').style.display = 'none';
+            document.getElementById('successMsg')?.remove();
+            try {
+                const formData = new FormData();
+                formData.append('data', data);
+                formData.append('file', document.getElementById('file').value);
+                formData.append('size', document.getElementById('size').value);
+                formData.append('body_color', document.getElementById('body_color').value);
+                formData.append('bg_color', document.getElementById('bg_color').value);
+                formData.append('transparent', document.getElementById('transparent').checked);
+                formData.append('module_style', document.getElementById('module_style').value);
+                formData.append('gradient_type', document.getElementById('gradient_type').value);
+                formData.append('start_color', document.getElementById('start_color').value);
+                formData.append('end_color', document.getElementById('end_color').value);
+                if (!(tab === 'text')) {
+                    formData.append('caption', document.getElementById('caption').value);
+                }
+                formData.append('logo_url', document.getElementById('logo_url').value);
+                const logoFile = document.getElementById('logo').files[0];
+                if (logoFile) formData.append('logo', logoFile);
+                // Utilise l'URL auto
+                const response = await fetch(getApiUrl(), {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('API Error: ' + response.status);
+                const contentType = response.headers.get('content-type');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                let preview = '';
+                if (contentType && contentType.includes('pdf')) {
+                    preview = `<a href="${url}" target="_blank">Download QR Code (PDF)</a>`;
+                } else {
+                    preview = `<img src="${url}" alt="QR Code" style="max-width:100%;">`;
+                }
+                document.getElementById('qrResult').innerHTML = preview;
+                document.getElementById('qrActions').style.display = 'flex';
+                document.getElementById('downloadBtn').onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'qrcode.' + document.getElementById('file').value;
+                    a.click();
+                };
+                document.getElementById('copyBtn').onclick = async () => {
+                    if (contentType && contentType.startsWith('image/')) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ [contentType]: blob })
+                            ]);
+                        } catch (err) {
+                            alert('Copy not supported in this browser.');
+                        }
+                    } else {
+                        alert('Copy available for images only.');
+                    }
+                };
+                document.getElementById('paletteBtn').onclick = () => {
+                    alert('Advanced customization coming soon!');
+                };
+                // Message de succès
+                document.getElementById('successMsg')?.remove();
+                const msg = document.createElement('div');
+                msg.id = 'successMsg';
+                msg.className = 'success-msg';
+                msg.textContent = 'QR code generated successfully!';
+                document.getElementById('qrForm').appendChild(msg);
+                clearTimeout(lastSuccessTimeout);
+                lastSuccessTimeout = setTimeout(() => { msg.remove(); }, 2500);
+            } catch (err) {
+                document.getElementById('qrResult').innerHTML = 'QR code preview';
+                document.getElementById('errorMsg').textContent = err.message === 'Failed to fetch' ? 'Could not reach the API. Please check your server or CORS settings.' : err.message;
+                document.getElementById('successMsg')?.remove();
+            }
+        }
+        // Ajout des listeners pour génération en temps réel
+        function addRealtimeListeners() {
+            const form = document.getElementById('qrForm');
+            form.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.type === 'file') {
+                    el.onchange = () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(generateQRCode, 400); };
+                } else {
+                    el.oninput = () => { clearTimeout(debounceTimeout); debounceTimeout = setTimeout(generateQRCode, 400); };
+                }
+            });
+        }
+        // Patch setTab pour relier les listeners à chaque changement d'onglet
+        const _setTab = setTab;
+        setTab = function(tab) {
+            _setTab(tab);
+            addRealtimeListeners();
+            generateQRCode();
+        };
+        setTab('url');
+        // Désactiver le submit natif, utiliser le bouton pour accessibilité
+        document.getElementById('qrForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateQRCode();
+        });
+    </script>
+</body>
+</html> 
