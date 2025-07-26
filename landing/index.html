@@ -443,7 +443,10 @@
                 // Utilise l'URL auto
                 const response = await fetch(getApiUrl(), {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    headers: {
+                        'X-RapidAPI-Host': 'advanced-qr-code-generator.p.rapidapi.com'
+                    }
                 });
                 if (!response.ok) throw new Error('API Error: ' + response.status);
                 const contentType = response.headers.get('content-type');
