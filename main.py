@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 import httpx
 from qrcode.image.svg import SvgImage
 from qrcode.constants import ERROR_CORRECT_H
-import praw
 import os
 import hashlib
 import json
